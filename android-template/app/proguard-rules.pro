@@ -1,0 +1,3 @@
+-keep class com.google.android.gms.** { *; }
+-keep class com.android.billingclient.** { *; }
+-keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
