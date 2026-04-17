@@ -1,0 +1,60 @@
+workflows:
+  build-native-aab:
+    name: Build Native Android AAB from URL
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      java: 17
+      vars:
+        APP_URL: $APP_URL
+        APP_NAME: $APP_NAME
+        PACKAGE_NAME: $PACKAGE_NAME
+        VERSION_NAME: $VERSION_NAME
+        VERSION_CODE: $VERSION_CODE
+        THEME_COLOR: $THEME_COLOR
+        SPLASH_COLOR: $SPLASH_COLOR
+        NAV_COLOR: $NAV_COLOR
+        ORIENTATION: $ORIENTATION
+        ADMOB_APP_ID: $ADMOB_APP_ID
+        ADMOB_BANNER_ID: $ADMOB_BANNER_ID
+        ADMOB_INTERSTITIAL_ID: $ADMOB_INTERSTITIAL_ID
+        ADMOB_REWARDED_ID: $ADMOB_REWARDED_ID
+        ENABLE_BILLING: $ENABLE_BILLING
+        ICON_URL: $ICON_URL
+      groups:
+        - keystore_credentials   # CM_KEYSTORE, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD
+    scripts:
+      - name: Copy template
+        script: |
+          cp -r $CM_BUILD_DIR/scripts/android-template $CM_BUILD_DIR/android
+          chmod +x $CM_BUILD_DIR/android/gradlew
+
+      - name: Decode keystore
+        script: |
+          echo "$CM_KEYSTORE" | base64 --decode > $CM_BUILD_DIR/android/release.keystore
+
+      - name: Download app icon
+        script: |
+          if [ -n "$ICON_URL" ]; then
+            for size in 48 72 96 144 192; do
+              dir=$CM_BUILD_DIR/android/app/src/main/res/mipmap-$([ $size = 48 ] && echo mdpi || [ $size = 72 ] && echo hdpi || [ $size = 96 ] && echo xhdpi || [ $size = 144 ] && echo xxhdpi || echo xxxhdpi)
+              mkdir -p "$dir"
+              curl -sL "$ICON_URL" -o "$dir/ic_launcher.png"
+            done
+          fi
+
+      - name: Configure project (package, version, colors, AdMob)
+        script: bash $CM_BUILD_DIR/scripts/configure.sh
+
+      - name: Build signed AAB + APK
+        script: |
+          cd $CM_BUILD_DIR/android
+          ./gradlew bundleRelease assembleRelease \
+            -PRELEASE_STORE_FILE=$CM_BUILD_DIR/android/release.keystore \
+            -PRELEASE_STORE_PASSWORD="$CM_KEYSTORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$CM_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$CM_KEY_PASSWORD" --no-daemon
+
+    artifacts:
+      - $CM_BUILD_DIR/android/app/build/outputs/bundle/release/app-release.aab
+      - $CM_BUILD_DIR/android/app/build/outputs/apk/release/app-release.apk
