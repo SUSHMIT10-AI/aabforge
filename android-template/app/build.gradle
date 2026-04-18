@@ -1,0 +1,38 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace "__PACKAGE_NAME__"
+    compileSdk 34
+    defaultConfig {
+        applicationId "__PACKAGE_NAME__"
+        minSdk 23
+        targetSdk 34
+        versionCode __VERSION_CODE__
+        versionName "__VERSION_NAME__"
+    }
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("CM_KEYSTORE_PATH") ?: "keystore.jks")
+            storePassword System.getenv("CM_KEYSTORE_PASSWORD") ?: ""
+            keyAlias System.getenv("CM_KEY_ALIAS") ?: ""
+            keyPassword System.getenv("CM_KEY_PASSWORD") ?: ""
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.webkit:webkit:1.8.0'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'com.google.android.gms:play-services-ads:22.6.0'
+}

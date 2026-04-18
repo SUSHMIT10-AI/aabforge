@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="theme_color">__THEME_COLOR__</color>
+    <color name="nav_color">__NAV_COLOR__</color>
+    <color name="splash_color">__SPLASH_COLOR__</color>
+</resources>
