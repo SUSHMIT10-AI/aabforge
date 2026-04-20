@@ -79,15 +79,25 @@ workflows:
           fi
           chmod +x gradlew
 
+      -workflows:
+  android-build:
+    environment:
+      groups:
+        - keystore_credentials
+      vars:
+        CM_KEYSTORE_PATH: /tmp/release.jks
+    scripts:
       - name: Decode keystore
         script: |
-          set -e
-          if [ -z "$CM_KEYSTORE" ]; then
-            echo "ERROR: CM_KEYSTORE empty. Add it to keystore_credentials group."
-            exit 1
-          fi
-          echo "$CM_KEYSTORE" | base64 --decode > "$CM_BUILD_DIR/android/release.keystore"
-          ls -la "$CM_BUILD_DIR/android/release.keystore"
+          echo $CM_KEYSTORE | base64 --decode > 
+      - name: Build AAB
+        script: |
+          cd android-template
+          chmod +x ./gradlew
+          ./gradlew bundleRelease
+    artifacts:
+      - android-template/app/build/outputs/**/*.aab
+
 
       - name: Download app icon
         script: |
