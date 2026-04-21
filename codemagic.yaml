@@ -19,34 +19,34 @@ workflows:
           echo "===== Root build dir ====="
           ls -la $CM_BUILD_DIR
           echo "===== android-template ====="
-          ls -la $CM_BUILD_DIR/android-template
+          ls -la $CM_BUILD_DIR/android-template || echo "android-template folder MISSING"
           echo "===== app folder ====="
-          ls -la $CM_BUILD_DIR/android-template/app
+          ls -la $CM_BUILD_DIR/android-template/app || echo "app folder MISSING"
+
+      - name: Generate Gradle wrapper if missing
+        working_directory: android-template
+        script: |
+          if [ ! -f "./gradlew" ]; then
+            echo "gradlew not found — generating Gradle wrapper..."
+            gradle wrapper --gradle-version 8.5
+          else
+            echo "gradlew already exists"
+          fi
+          chmod +x ./gradlew
+          ls -la ./gradlew
 
       - name: Decode keystore
         script: |
           echo $CM_KEYSTORE | base64 --decode > $CM_BUILD_DIR/android-template/app/release.jks
-          echo "Keystore decoded successfully"
+          echo "Keystore decoded:"
           ls -la $CM_BUILD_DIR/android-template/app/release.jks
-
-      - name: Make gradlew executable
-        script: |
-          chmod +x $CM_BUILD_DIR/android-template/gradlew
 
       - name: Build AAB
         working_directory: android-template
         script: |
-          ./gradlew bundleRelease --stacktrace
+          ./gradlew bundleRelease --stacktrace --no-daemon
 
     artifacts:
       - android-template/app/build/outputs/**/*.aab
       - android-template/app/build/outputs/**/mapping.txt
       - android-template/app/build/outputs/**/*.apk
-
-    publishing:
-      email:
-        recipients:
-          - your-aitechdeveloper45@gmail.com
-        notify:
-          success: true
-          failure: true
