@@ -16,15 +16,22 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(System.getenv("CM_KEYSTORE_PATH"))
-            storePassword System.getenv("CM_KEYSTORE_PASSWORD")
-            keyAlias System.getenv("CM_KEY_ALIAS")
-            keyPassword System.getenv("CM_KEY_PASSWORD")
+            // Store the path in a variable first
+            def keystorePath = System.getenv("CM_KEYSTORE_PATH")
+
+            // Only configure signing if the path is actually found
+            if (keystorePath != null) {
+                storeFile file(keystorePath)
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
         release {
+            // This will now safely skip signing if the config above wasn't set
             signingConfig signingConfigs.release
             minifyEnabled false
         }
