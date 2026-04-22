@@ -1,0 +1,43 @@
+workflows:
+  build-aab-workflow:
+    name: Build AAB
+    max_build_duration: 60
+    environment:
+      java: 17
+    scripts:
+      - name: Verify Android template exists
+        script: |
+          test -f "$CM_BUILD_DIR/android-template/settings.gradle"
+          test -f "$CM_BUILD_DIR/android-template/build.gradle"
+          test -f "$CM_BUILD_DIR/android-template/app/build.gradle"
+      - name: Set up Android SDK path
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android-template/local.properties"
+      - name: Decode signing key if provided
+        script: |
+          if [ -n "${CM_KEYSTORE:-}" ]; then
+            mkdir -p "$CM_BUILD_DIR/android-template/app"
+            echo "$CM_KEYSTORE" | base64 --decode > "$CM_BUILD_DIR/android-template/app/release.jks"
+            export CM_KEYSTORE_PATH="$CM_BUILD_DIR/android-template/app/release.jks"
+            echo "CM_KEYSTORE_PATH=$CM_KEYSTORE_PATH" >> "$CM_ENV"
+            ls -la "$CM_BUILD_DIR/android-template/app/release.jks"
+          else
+            echo "CM_KEYSTORE not set, continuing without release signing file"
+          fi
+      - name: Ensure Gradle wrapper exists
+        working_directory: android-template
+        script: |
+          if [ ! -f ./gradlew ]; then
+            echo "gradlew missing — generating wrapper with Gradle 8.5"
+            gradle wrapper --gradle-version 8.5 --distribution-type bin
+          fi
+          test -f ./gradlew
+          chmod +x ./gradlew
+          ls -la ./gradlew
+      - name: Build AAB
+        working_directory: android-template
+        script: |
+          ./gradlew bundleRelease --stacktrace --no-daemon
+    artifacts:
+      - android-template/app/build/outputs/**/*.aab
+      - android-template/app/build/outputs/**/mapping.txt
